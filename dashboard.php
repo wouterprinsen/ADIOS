@@ -1,24 +1,42 @@
 <?php
-    $focus = 0;
-    if (isset($_POST['btn_option1'])) {
-        $focus = 1;
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['btn_option1'])) {
         $image_name = $_POST['docker_image'];
-        $data = ['image_name' => $image_name];
-        $url = 'http://10.3.12.20:5000/create_container';
         
-        // Use cURL to send POST request to Flask application
+        // Prepare data for Flask API
+        $data = json_encode(['image_name' => $image_name]);
+        
+        // URL of Flask endpoint for creating containers
+        $url = 'http://localhost:5000/create_container'; // Adjust as per your Flask server
+        
+        // Initialize cURL session
         $ch = curl_init($url);
+        
+        // Set cURL options
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
         
-        // Execute the request
+        // Execute cURL session
         $response = curl_exec($ch);
-        curl_close($ch);
         
-        // Handle response as needed
-        $html = json_decode($response, true);
+        // Check for errors
+        if ($response === false) {
+            echo 'Error: ' . curl_error($ch);
+        } else {
+            // Decode the response
+            $result = json_decode($response, true);
+            
+            // Check if container creation was successful
+            if (isset($result['container_id'])) {
+                echo 'Container created successfully with ID: ' . $result['container_id'];
+            } else {
+                echo 'Error creating container: ' . $result['error'];
+            }
+        }
+        
+        // Close cURL session
+        curl_close($ch);
     }
 ?>
 
@@ -74,17 +92,16 @@
                     <select id="docker_image" name="docker_image" required>
                         <option value="">Select Docker Image</option>
                         <?php
-                            // Fetch Docker images from Flask endpoint
-                            $url = 'http://10.3.12.20:5000/images';
-                            $images_json = file_get_contents($url);
-                            $images = json_decode($images_json, true);
+                            // Fetch Docker images from a local source or API as discussed
+                            // Example: List images from a local Docker registry
+                            $images = shell_exec('docker images --format "{{.Repository}}:{{.Tag}}"');
+                            $images = explode("\n", trim($images));
                             
                             foreach ($images as $image) {
-                                echo '<option value="' . $image['id'] . '">' . implode(', ', $image['tags']) . '</option>';
+                                echo '<option value="' . $image . '">' . $image . '</option>';
                             }
                         ?>
                     </select>
-                    <input type="hidden" id="startcontainer1" name="startcontainer1" value="start_container1">
                     <input type="submit" value="Start een leerlab" name="btn_option1">
                 </form>
             </div>

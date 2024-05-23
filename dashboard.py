@@ -1,9 +1,17 @@
 from flask import Flask, jsonify, request
+import subprocess  # For executing shell commands
 import docker
-from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+
+# Manually set CORS headers
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    return response
+
 client = docker.from_env()
 
 @app.route('/images', methods=['GET'])
@@ -16,7 +24,7 @@ def list_images():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/create_container', methods=['POST'])
+@app.route('/option1', methods=['POST'])
 def create_container():
     data = request.json
     image_name = data.get('image_name')
