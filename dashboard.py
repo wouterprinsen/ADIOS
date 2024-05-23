@@ -1,23 +1,33 @@
-from  flask import Flask, request, jsonify
-app=Flask(__name__)
-
+from flask import Flask, jsonify, request
 import docker
-def start_ubuntu_container():
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
+client = docker.from_env()
+
+@app.route('/images', methods=['GET'])
+def list_images():
     try:
-        client = docker.from_env()
-        container = client.containers.run('ubuntu', detach=True, name='ubu01', command='sleep 1d')
-        return container
-    except docker.errors.APIError as e:
-        print(f"Error occurred: {e}")
-        return None
+        result = subprocess.run(['docker', 'images', '--format', '{{.Repository}}:{{.Tag}}'], capture_output=True, text=True)
+        images = result.stdout.strip().split('\n')
+        image_list = [{'id': image, 'tags': [image]} for image in images]
+        return jsonify(image_list)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-
-@app.route('/option1', methods=['GET', 'POST'])
-def handle_button_click():
-    container = start_ubuntu_container()
-    if container:
-        return 'Ubuntu container started successfully!'
+@app.route('/create_container', methods=['POST'])
+def create_container():
+    data = request.json
+    image_name = data.get('image_name')
+    if image_name:
+        try:
+            container = client.containers.run(image_name, detach=True)
+            return jsonify({'container_id': container.id}), 201
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
     else:
-        return 'Failed to start Ubuntu container.'
+        return jsonify({'error': 'Image name is required'}), 400
 
-app.run(host='0.0.0.0') #luister naar al zijn IP-adressen
+if __name__ == '__main__':
+    app.run(host='0.0.0.0')
