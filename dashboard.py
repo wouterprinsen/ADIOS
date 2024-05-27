@@ -1,41 +1,30 @@
-from flask import Flask, jsonify, request
-import subprocess  # For executing shell commands
-import docker
-
+from flask import Flask, request, render_template_string
 app = Flask(__name__)
 
-# Manually set CORS headers
-@app.after_request
-def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    return response
+#===========================================================================
+@app.route("/opdracht1")
+def opdracht1():
+    # get the docker library
+    import docker
+    client = docker.from_env()
+    
+    image_names = [img.tags[0] for img in client.images.list()]
+    
+    dropdown_options = ''.join([f'<option value="{name}">{name}</option>' for name in image_names])
+    
+    html_template = """
+    <form action="/dashboard.php">
+        <label for="images">Choose an image:</label>
+        <select id="images" name="images">
+            {{ dropdown_options }}
+        </select><br><br>
+        <input type="submit">
+    </form>
+    """
+    
+    rendered_template = render_template_string(html_template, dropdown_options=dropdown_options)
+    
+    return rendered_template
 
-client = docker.from_env()
-
-@app.route('/images', methods=['GET'])
-def list_images():
-    try:
-        result = subprocess.run(['docker', 'images', '--format', '{{.Repository}}:{{.Tag}}'], capture_output=True, text=True)
-        images = result.stdout.strip().split('\n')
-        image_list = [{'id': image, 'tags': [image]} for image in images]
-        return jsonify(image_list)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/option1', methods=['POST'])
-def create_container():
-    data = request.json
-    image_name = data.get('image_name')
-    if image_name:
-        try:
-            container = client.containers.run(image_name, detach=True)
-            return jsonify({'container_id': container.id}), 201
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    else:
-        return jsonify({'error': 'Image name is required'}), 400
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+if __name__ == "__main__":
+    app.run(host='10.3.12.20', port=5000)
