@@ -1,71 +1,14 @@
 <?php
      //achterhaal op welke knop is gedrukt
 	 $focus=0;
-	 if(isset($_POST['btn_opdracht1'])) {$focus=1;}
-	 if(isset($_POST['btn_opdracht2'])) {$focus=2;}
-	 if(isset($_POST['btn_opdracht3'])) {$focus=3;}
-	 if(isset($_POST['btn_opdracht4'])) {$focus=4;}
-	 if(isset($_POST['btn_opdracht5'])) {$focus=5;}
-	 if(isset($_POST['btn_opdracht6'])) {$focus=6;}
-	 if(isset($_POST['btn_opdracht7'])) {$focus=7;}
-	 if(isset($_POST['btn_opdracht8'])) {$focus=8;}
-	 if(isset($_POST['btn_opdracht9'])) {$focus=9;} 
+	 if(isset($_POST['btn_container'])) {$focus=1;}
+	
 	 
 	 if($focus==1)
 	 {
-	     $url="http://10.0.2.10:5000/opdracht1";
+	     $url="http://10.3.12.20:5000/start_container/" . $_POST['selectedImage'];
 		 $html=file_get_contents($url); 
 	 }
-	 if($focus==2)
-	 {
-	     $url="http://10.0.2.10:5000/opdracht2";
-		 $html=file_get_contents($url); 
-	 }
-	 if($focus==3)
-	 {
-	     $url="http://10.0.2.10:5000/opdracht3";
-		 $html=file_get_contents($url); 
-	 }
-	 if($focus==4)
-	 {
-	     $url="http://10.0.2.10:5000/opdracht4";
-		 $html=file_get_contents($url); 
-	 }
-	 if($focus==5)
-	 {
-	     $url="http://10.0.2.10:5000/opdracht5";
-		 $html=file_get_contents($url); 
-	 }
-	 if($focus==6)
-	 {
-	     $url="http://10.0.2.10:5000/opdracht6/" . $_POST['txt_container'];
-		 $html=file_get_contents($url); 
-	 }
-	 if($focus==7)
-	 {
-	     $url="http://10.0.2.10:5000/opdracht7/" . $_POST['txt_imagenaam'] . "/"
-		                                                                . $_POST['txt_commando'] . "/"
-		                                                                . $_POST['txt_hostvolume'] . "/"
-		                                                                . $_POST['txt_containervolume'] . "/"
-		                                                                . $_POST['txt_hostpoort'] . "/"
-		                                                                . $_POST['txt_containerpoort'] . "/"
-		                                                                . $_POST['txt_containernaam'] ;
-	         $html=file_get_contents($url);	     
-	 }
-	 if($focus==8)
-	 {
-             $url="http://10.0.2.10:5000/opdracht8/" . $_POST['txt_username'] . "/"
-                                                                                . $_POST['password'] . "/"
-										. $_POST['txt_image'] . "/"
-										. $_POST['txt_tag'] . "/"
-										. $_POST['txt_repository'] ;
-                 $html=file_get_contents($url);
-	 }
-         if($focus==9)
-         {
-             $url="http://10.0.2.10:5000/opdracht9/" . $_POST['cont_prestatie'];
-                 $html=file_get_contents($url);
-         }
 
 ?>
 <!DOCTYPE html>
@@ -136,43 +79,40 @@
             BP1: Een DOCKER DASHBOARD
         </section>
 <!----------------------------------------------------------------------------------------------------->
-        <section id="docker_opdracht1">
-            <div class="koptekst">opdr1: overzicht van alle images</div>
-            <div class="form" style="text-align: center; padding:5px;">
-                <form method="POST" action="" name="opdracht01" id="opdracht01">
-                    <!-- <input type="hidden" id="imagelijst" name="imagelijst" value="haal_image_lijst_op"> 
-                    <input type="submit" value="Haal alle images op" name="btn_opdracht1" value="btn_opdracht1"> -->
-                    <select id="imagelijst" name="imagelijst" value="haal_image_lijst_op">
-                        <option id=></option>                        
-                    </select>
-                    <input type="submit" value="Haal alle images op" name="btn_opdracht1" value="btn_opdracht1">
-                </form>
-            </div>
-            <div class="output" id="output_opdracht01" >
-			<?php
+<?php
+// Check if form is submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get the selected image
+    $selectedImage = $_POST['selectedImage'];
+}
+
+// Fetch Docker images
+$images = [];
+exec("docker image ls --format '{{.Repository}}'", $images);
+
+// Generate dropdown options
+function generateDropdownOptions($images) {
+    $dropdownOptions = "";
+    foreach ($images as $image) {
+        $dropdownOptions .= "<option value=\"$image\">$image</option>";
+    }
+    return $dropdownOptions;
+}
+$dropdownOptions = generateDropdownOptions($images);
+?>
+<section id="docker_option1">
+    <div class="koptekst">Start a learning-lab</div>
+    <div class="form" style="text-align: center; padding:5px;">
+        <form method="POST" action="" name="option1" id="option1">
+            <input type="hidden" id="startcontainer1" name="startcontainer1" value="startcontainer1">
+            <select id="image-select" name="selectedImage">
+                <option value="">Select an image...</option>
+                <?= $dropdownOptions ?>
+            </select>
+            <input type="submit" value="Start een ubuntu container" name="btn_container" value="btn_container" >
+        </form>
+        <?php
 			    if($focus==1) 
-			    {
-					echo($html);
-				}
-				else
-				{
-					echo("output");
-				}
-			?>
-             </div>
-        </section>
-<!----------------------------------------------------------------------------------------------------->
-        <section id="docker_opdracht2">
-            <div class="koptekst">opdr2: overzicht van alle containers</div>
-            <div class="form" style="text-align: center; padding:5px;">
-                <form method="POST" action="" name="opdracht02" id="opdracht02">
-                    <input type="hidden" id="containerlijst" name="containerlijst" value="haal_container_lijst_op"> 
-                    <input type="submit" value="Haal alle containers op" name="btn_opdracht2" value="btn_opdracht2" >
-                </form>
-            </div>
-            <div class="output" id="output_opdracht02">
-			<?php
-			    if($focus==2) 
 			    {
 					echo("$html");
 				}
@@ -181,8 +121,12 @@
 					echo("output");
 				}
 			?>
-            </div>
-        </section>
+             </div>
+
+    </div>
+</section>
+
+
 <!----------------------------------------------------------------------------------------------------->
         <section id="docker_opdracht3">
             <div class="koptekst">opdr3: Stop alle lopende containers</div>
